@@ -1,0 +1,24 @@
+Mode: local-only
+Accuracy: 95.56%
+Match rate: 96.3%
+
+Misclassified (19):
+  METRO PCS MOBILE: expected=Transportation, got=Utilities
+  APPLE.COM/BILL: expected=Shopping, got=Subscriptions
+  CVS PHARMACY FRONT: expected=Shopping, got=Health & Pharmacy
+  WALGREENS #4521 FRONT: expected=Shopping, got=Health & Pharmacy
+  GOLDEN GATE PARK EVENTS: expected=Entertainment, got=Uncategorized
+  TARGET RETURN CREDIT: expected=Income / Refund, got=Shopping
+  ETSY SHOP PAYOUT: expected=Income / Refund, got=Shopping
+  AIRBNB HOST PAYOUT: expected=Income / Refund, got=Travel
+  UBER EATS PROMO CREDIT: expected=Income / Refund, got=Dining Out
+  DOORDASH PROMO REFUND: expected=Income / Refund, got=Dining Out
+  AMAZON PRIME REFUND: expected=Income / Refund, got=Subscriptions
+  NETFLIX REFUND: expected=Income / Refund, got=Subscriptions
+  SPOTIFY REFUND: expected=Income / Refund, got=Subscriptions
+  AMAZON FRESH REFUND: expected=Income / Refund, got=Groceries
+  TRADER JOES RETURN: expected=Income / Refund, got=Groceries
+  COSTCO RETURN CREDIT: expected=Income / Refund, got=Groceries
+  WHOLEFDS MARKET REFUND: expected=Income / Refund, got=Groceries
+  SAFEWAY RETURN CREDIT: expected=Income / Refund, got=Groceries
+  AMAZON PHARMACY: expected=Health & Pharmacy, got=Shopping

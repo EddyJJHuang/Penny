@@ -1,0 +1,203 @@
+{
+  "mode": "local-only",
+  "accuracy": 95.56,
+  "matched": 412,
+  "unmatched": 16,
+  "match_rate": 96.3,
+  "report": {
+    "Dining Out": {
+      "precision": 0.9512195121951219,
+      "recall": 1.0,
+      "f1-score": 0.975,
+      "support": 39.0
+    },
+    "Education": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 20.0
+    },
+    "Entertainment": {
+      "precision": 1.0,
+      "recall": 0.96875,
+      "f1-score": 0.9841269841269841,
+      "support": 32.0
+    },
+    "Gas & Auto": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 20.0
+    },
+    "Groceries": {
+      "precision": 0.8780487804878049,
+      "recall": 1.0,
+      "f1-score": 0.935064935064935,
+      "support": 36.0
+    },
+    "Health & Pharmacy": {
+      "precision": 0.9473684210526315,
+      "recall": 0.972972972972973,
+      "f1-score": 0.96,
+      "support": 37.0
+    },
+    "Housing": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 20.0
+    },
+    "Income / Refund": {
+      "precision": 1.0,
+      "recall": 0.6285714285714286,
+      "f1-score": 0.7719298245614035,
+      "support": 35.0
+    },
+    "Shopping": {
+      "precision": 0.9,
+      "recall": 0.9,
+      "f1-score": 0.9,
+      "support": 30.0
+    },
+    "Subscriptions": {
+      "precision": 0.9411764705882353,
+      "recall": 1.0,
+      "f1-score": 0.9696969696969697,
+      "support": 64.0
+    },
+    "Transportation": {
+      "precision": 1.0,
+      "recall": 0.9565217391304348,
+      "f1-score": 0.9777777777777777,
+      "support": 23.0
+    },
+    "Travel": {
+      "precision": 0.9714285714285714,
+      "recall": 1.0,
+      "f1-score": 0.9855072463768116,
+      "support": 34.0
+    },
+    "Uncategorized": {
+      "precision": 0.9375,
+      "recall": 1.0,
+      "f1-score": 0.967741935483871,
+      "support": 15.0
+    },
+    "Utilities": {
+      "precision": 0.9583333333333334,
+      "recall": 1.0,
+      "f1-score": 0.9787234042553191,
+      "support": 23.0
+    },
+    "accuracy": 0.955607476635514,
+    "macro avg": {
+      "precision": 0.963219649220407,
+      "recall": 0.9590582957624884,
+      "f1-score": 0.9575406483817197,
+      "support": 428.0
+    },
+    "weighted avg": {
+      "precision": 0.9582429459462694,
+      "recall": 0.955607476635514,
+      "f1-score": 0.9528047982955308,
+      "support": 428.0
+    }
+  },
+  "misclassified": [
+    {
+      "description": "METRO PCS MOBILE",
+      "expected": "Transportation",
+      "predicted": "Utilities"
+    },
+    {
+      "description": "APPLE.COM/BILL",
+      "expected": "Shopping",
+      "predicted": "Subscriptions"
+    },
+    {
+      "description": "CVS PHARMACY FRONT",
+      "expected": "Shopping",
+      "predicted": "Health & Pharmacy"
+    },
+    {
+      "description": "WALGREENS #4521 FRONT",
+      "expected": "Shopping",
+      "predicted": "Health & Pharmacy"
+    },
+    {
+      "description": "GOLDEN GATE PARK EVENTS",
+      "expected": "Entertainment",
+      "predicted": "Uncategorized"
+    },
+    {
+      "description": "TARGET RETURN CREDIT",
+      "expected": "Income / Refund",
+      "predicted": "Shopping"
+    },
+    {
+      "description": "ETSY SHOP PAYOUT",
+      "expected": "Income / Refund",
+      "predicted": "Shopping"
+    },
+    {
+      "description": "AIRBNB HOST PAYOUT",
+      "expected": "Income / Refund",
+      "predicted": "Travel"
+    },
+    {
+      "description": "UBER EATS PROMO CREDIT",
+      "expected": "Income / Refund",
+      "predicted": "Dining Out"
+    },
+    {
+      "description": "DOORDASH PROMO REFUND",
+      "expected": "Income / Refund",
+      "predicted": "Dining Out"
+    },
+    {
+      "description": "AMAZON PRIME REFUND",
+      "expected": "Income / Refund",
+      "predicted": "Subscriptions"
+    },
+    {
+      "description": "NETFLIX REFUND",
+      "expected": "Income / Refund",
+      "predicted": "Subscriptions"
+    },
+    {
+      "description": "SPOTIFY REFUND",
+      "expected": "Income / Refund",
+      "predicted": "Subscriptions"
+    },
+    {
+      "description": "AMAZON FRESH REFUND",
+      "expected": "Income / Refund",
+      "predicted": "Groceries"
+    },
+    {
+      "description": "TRADER JOES RETURN",
+      "expected": "Income / Refund",
+      "predicted": "Groceries"
+    },
+    {
+      "description": "COSTCO RETURN CREDIT",
+      "expected": "Income / Refund",
+      "predicted": "Groceries"
+    },
+    {
+      "description": "WHOLEFDS MARKET REFUND",
+      "expected": "Income / Refund",
+      "predicted": "Groceries"
+    },
+    {
+      "description": "SAFEWAY RETURN CREDIT",
+      "expected": "Income / Refund",
+      "predicted": "Groceries"
+    },
+    {
+      "description": "AMAZON PHARMACY",
+      "expected": "Health & Pharmacy",
+      "predicted": "Shopping"
+    }
+  ]
+}
