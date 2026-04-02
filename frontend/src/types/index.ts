@@ -15,6 +15,23 @@ export type Category =
   | "Income / Refund"
   | "Uncategorized";
 
+export const ALL_CATEGORIES: Category[] = [
+  "Groceries",
+  "Dining Out",
+  "Transportation",
+  "Gas & Auto",
+  "Shopping",
+  "Entertainment",
+  "Subscriptions",
+  "Utilities",
+  "Health & Pharmacy",
+  "Housing",
+  "Education",
+  "Travel",
+  "Income / Refund",
+  "Uncategorized",
+];
+
 export type Confidence = "high" | "medium" | "low";
 
 export type ClassificationMethod = "local" | "gemini" | "user_correction";

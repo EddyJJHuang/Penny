@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { classifyTransactions } from "../services/api";
+import { classifyTransactions, correctTransaction } from "../services/api";
 import type {
+  Category,
   ClassificationStats,
   ClassifiedTransaction,
   Transaction,
 } from "../types";
+import { ALL_CATEGORIES } from "../types";
 
 interface TransactionTableProps {
   transactions: Transaction[];
@@ -36,6 +38,7 @@ export function TransactionTable({
 }: TransactionTableProps) {
   const [isClassifying, setIsClassifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [correctionCount, setCorrectionCount] = useState(0);
 
   const hasResults = classifications.length > 0;
 
@@ -68,7 +71,6 @@ export function TransactionTable({
     return () => {
       cancelled = true;
     };
-    // Only run on mount — transactions and callbacks are stable
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -87,6 +89,35 @@ export function TransactionTable({
     [transactions]
   );
 
+  const handleCategoryChange = async (
+    transactionId: string,
+    newCategory: Category
+  ) => {
+    // Optimistically update local state
+    const updated = classifications.map((c) =>
+      c.id === transactionId
+        ? { ...c, category: newCategory, method: "user_correction" as const, confidence: "high" as const }
+        : c
+    );
+    onClassifyComplete(
+      updated,
+      {
+        total: updated.length,
+        local_matched: updated.filter((c) => c.method === "local").length,
+        gemini_matched: updated.filter((c) => c.method === "gemini").length,
+        uncategorized: updated.filter((c) => c.category === "Uncategorized").length,
+      }
+    );
+    setCorrectionCount((prev) => prev + 1);
+
+    // Fire-and-forget API call
+    try {
+      await correctTransaction(transactionId, { category: newCategory });
+    } catch {
+      setError("Failed to save correction. Please try again.");
+    }
+  };
+
   return (
     <div className="mx-auto max-w-5xl">
       {/* Header */}
@@ -97,18 +128,40 @@ export function TransactionTable({
           </h2>
           <p className="text-sm text-gray-500">
             {transactions.length} transactions
-            {hasResults ? " classified. Review and correct categories below." : "."}
+            {hasResults
+              ? " classified. Review and correct categories below."
+              : "."}
           </p>
         </div>
-        {hasResults && (
-          <button
-            type="button"
-            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-emerald-700"
-            onClick={onContinue}
-          >
-            View Dashboard
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {correctionCount > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700">
+              <svg
+                className="h-3.5 w-3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"
+                />
+              </svg>
+              {correctionCount} correction{correctionCount !== 1 ? "s" : ""}
+            </span>
+          )}
+          {hasResults && (
+            <button
+              type="button"
+              className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-emerald-700"
+              onClick={onContinue}
+            >
+              Continue to Dashboard
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Error banner */}
@@ -162,6 +215,15 @@ export function TransactionTable({
             Gemini
           </span>
           <span>
+            <span className="font-semibold text-violet-600">
+              {
+                classifications.filter((c) => c.method === "user_correction")
+                  .length
+              }
+            </span>{" "}
+            corrected
+          </span>
+          <span>
             <span className="font-semibold text-gray-600">
               {
                 classifications.filter(
@@ -208,7 +270,10 @@ export function TransactionTable({
               {sortedTransactions.map((txn) => {
                 const classified = classificationMap.get(txn.id);
                 return (
-                  <tr key={txn.id} className="hover:bg-gray-50 transition-colors">
+                  <tr
+                    key={txn.id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
                       {txn.date}
                     </td>
@@ -225,10 +290,23 @@ export function TransactionTable({
                     </td>
                     {hasResults && (
                       <>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm">
-                          <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                            {classified?.category ?? "—"}
-                          </span>
+                        <td className="whitespace-nowrap px-4 py-2 text-sm">
+                          <select
+                            value={classified?.category ?? "Uncategorized"}
+                            onChange={(e) =>
+                              handleCategoryChange(
+                                txn.id,
+                                e.target.value as Category
+                              )
+                            }
+                            className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                          >
+                            {ALL_CATEGORIES.map((cat) => (
+                              <option key={cat} value={cat}>
+                                {cat}
+                              </option>
+                            ))}
+                          </select>
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-center text-sm">
                           {classified && (
@@ -243,7 +321,8 @@ export function TransactionTable({
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-gray-500">
                           {classified
-                            ? METHOD_LABELS[classified.method] ?? classified.method
+                            ? (METHOD_LABELS[classified.method] ??
+                                classified.method)
                             : "—"}
                         </td>
                       </>
