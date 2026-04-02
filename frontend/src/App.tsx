@@ -3,7 +3,7 @@ import { Dashboard } from "./components/Dashboard";
 import { FileUpload } from "./components/FileUpload";
 import { Stepper } from "./components/Stepper";
 import { TransactionTable } from "./components/TransactionTable";
-import type { ClassifiedTransaction, Step, Transaction } from "./types";
+import type { ClassificationStats, ClassifiedTransaction, Step, Transaction } from "./types";
 
 const STEPS: Step[] = [
   { label: "Upload", description: "Upload a bank statement" },
@@ -15,6 +15,7 @@ function App() {
   const [currentStep, setCurrentStep] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [classifications, setClassifications] = useState<ClassifiedTransaction[]>([]);
+  const [_stats, setStats] = useState<ClassificationStats | null>(null);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -30,6 +31,7 @@ function App() {
                 setCurrentStep(0);
                 setTransactions([]);
                 setClassifications([]);
+                setStats(null);
               }}
             >
               Start Over
@@ -56,8 +58,9 @@ function App() {
           <TransactionTable
             transactions={transactions}
             classifications={classifications}
-            onClassifyComplete={(results) => {
+            onClassifyComplete={(results, stats) => {
               setClassifications(results);
+              setStats(stats);
             }}
             onContinue={() => setCurrentStep(2)}
           />
