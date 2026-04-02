@@ -1,12 +1,8 @@
 Mode: local-only
-Accuracy: 95.56%
+Accuracy: 96.5%
 Match rate: 96.3%
 
-Misclassified (19):
-  METRO PCS MOBILE: expected=Transportation, got=Utilities
-  APPLE.COM/BILL: expected=Shopping, got=Subscriptions
-  CVS PHARMACY FRONT: expected=Shopping, got=Health & Pharmacy
-  WALGREENS #4521 FRONT: expected=Shopping, got=Health & Pharmacy
+Misclassified (15):
   GOLDEN GATE PARK EVENTS: expected=Entertainment, got=Uncategorized
   TARGET RETURN CREDIT: expected=Income / Refund, got=Shopping
   ETSY SHOP PAYOUT: expected=Income / Refund, got=Shopping
