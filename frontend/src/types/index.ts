@@ -103,3 +103,12 @@ export interface RecommendRequest {
 export interface RecommendResponse {
   recommendations: Recommendation[];
 }
+
+// ---------------------------------------------------------------------------
+// UI types
+// ---------------------------------------------------------------------------
+
+export interface Step {
+  label: string;
+  description: string;
+}
