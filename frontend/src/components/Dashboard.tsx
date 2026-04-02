@@ -3,6 +3,7 @@ import type { ClassifiedTransaction, Transaction } from "../types";
 import { SpendingBarChart } from "./BarChart";
 import { SpendingLineChart } from "./LineChart";
 import { SpendingPieChart } from "./PieChart";
+import { Recommendations } from "./Recommendations";
 import { SummaryCards } from "./SummaryCards";
 
 interface DashboardProps {
@@ -31,6 +32,20 @@ export function Dashboard({ transactions, classifications }: DashboardProps) {
     return totals;
   }, [transactions, classMap]);
 
+  // Monthly totals for recommendations
+  const monthlyTotals = useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const txn of transactions) {
+      if (txn.amount >= 0) continue;
+      const month = txn.date.slice(0, 7);
+      totals[month] = (totals[month] ?? 0) + Math.abs(txn.amount);
+    }
+    for (const key of Object.keys(totals)) {
+      totals[key] = Math.round(totals[key] * 100) / 100;
+    }
+    return totals;
+  }, [transactions]);
+
   return (
     <div className="mx-auto max-w-6xl">
       <h2 className="mb-6 text-xl font-semibold text-gray-900">
@@ -57,9 +72,12 @@ export function Dashboard({ transactions, classifications }: DashboardProps) {
         </div>
       </div>
 
-      {/* Recommendations placeholder */}
-      <div className="mt-6 rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-400">
-        AI Recommendations — coming soon
+      {/* AI Recommendations */}
+      <div className="mt-6">
+        <Recommendations
+          spendingByCategory={categoryTotals}
+          monthlyTotals={monthlyTotals}
+        />
       </div>
     </div>
   );
