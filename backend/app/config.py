@@ -3,7 +3,7 @@ from typing import List
 
 class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.0-flash"
+    GEMINI_MODEL: str = "gemini-2.5-flash"
     GEMINI_MAX_RETRIES: int = 3
     GEMINI_BATCH_SIZE: int = 20
     CORS_ORIGINS: str = "http://localhost:5173"
