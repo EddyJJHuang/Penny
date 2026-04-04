@@ -22,6 +22,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Education": "#06b6d4",
   "Travel": "#a855f7",
   "Income / Refund": "#22c55e",
+  "Credit Card Payment": "#0ea5e9",
   "Uncategorized": "#9ca3af",
 };
 

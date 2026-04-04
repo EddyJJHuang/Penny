@@ -13,6 +13,7 @@ export type Category =
   | "Education"
   | "Travel"
   | "Income / Refund"
+  | "Credit Card Payment"
   | "Uncategorized";
 
 export const ALL_CATEGORIES: Category[] = [
@@ -29,6 +30,7 @@ export const ALL_CATEGORIES: Category[] = [
   "Education",
   "Travel",
   "Income / Refund",
+  "Credit Card Payment",
   "Uncategorized",
 ];
 

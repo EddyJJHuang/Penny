@@ -410,5 +410,18 @@
   "VENMO TRANSFER IN": "Income / Refund",
   "ZELLE FROM": "Income / Refund",
   "ZELLE PAYMENT FROM": "Income / Refund",
-  "ZELLE TRANSFER": "Income / Refund"
+  "ZELLE TRANSFER": "Income / Refund",
+
+  "AUTOMATIC PAYMENT": "Credit Card Payment",
+  "AUTOMATIC PAYMENT - THANK YOU": "Credit Card Payment",
+  "AUTOPAY PAYMENT": "Credit Card Payment",
+  "BILL PAY": "Credit Card Payment",
+  "CARD PAYMENT": "Credit Card Payment",
+  "CREDIT CARD PAYMENT": "Credit Card Payment",
+  "MOBILE PAYMENT": "Credit Card Payment",
+  "ONLINE PAYMENT": "Credit Card Payment",
+  "ONLINE PMT": "Credit Card Payment",
+  "PAYMENT - THANK YOU": "Credit Card Payment",
+  "PAYMENT RECEIVED": "Credit Card Payment",
+  "PAYMENT THANK YOU": "Credit Card Payment"
 }

@@ -27,6 +27,7 @@ class Category(str, Enum):
     EDUCATION = "Education"
     TRAVEL = "Travel"
     INCOME_REFUND = "Income / Refund"
+    CREDIT_CARD_PAYMENT = "Credit Card Payment"
     UNCATEGORIZED = "Uncategorized"
 
 

@@ -37,7 +37,7 @@ fences, no commentary.
 Categories (use these exact names):
   Groceries, Dining Out, Transportation, Gas & Auto, Shopping, Entertainment,
   Subscriptions, Utilities, Health & Pharmacy, Housing, Education, Travel,
-  Income / Refund, Uncategorized
+  Income / Refund, Credit Card Payment, Uncategorized
 
 Edge-case rules:
   - Coffee shops (Starbucks, Peet's) → Dining Out (NOT Groceries)
@@ -46,6 +46,7 @@ Edge-case rules:
   - Amazon grocery delivery → Groceries (NOT Shopping)
   - Gym memberships → Subscriptions
   - Positive amounts (deposits, refunds) → Income / Refund
+  - Credit card payments ("AUTOMATIC PAYMENT", "PAYMENT THANK YOU", "ONLINE PAYMENT") → Credit Card Payment (NOT Income / Refund)
 
 Input: a JSON array of objects with "id" and "description" fields.
 Output: a JSON array of objects with "id" and "category" fields, in the same order.
