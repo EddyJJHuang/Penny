@@ -462,7 +462,50 @@ def _extract_from_text(
 # Public API
 # ---------------------------------------------------------------------------
 
-def parse_pdf(file_content: bytes) -> list[Transaction]:
+_CREDIT_CARD_RE = re.compile(
+    r"credit\s*card|card\s*statement|account\s*number\s*ending|"
+    r"new\s*balance|minimum\s*payment\s*due|payment\s*due\s*date|"
+    r"credit\s*limit|available\s*credit|previous\s*balance",
+    re.IGNORECASE,
+)
+
+
+def _detect_credit_card_pdf(full_text: str) -> bool:
+    """Heuristic: return True if the PDF looks like a credit card statement."""
+    matches = len(_CREDIT_CARD_RE.findall(full_text))
+    # Require at least 2 indicator phrases to reduce false positives
+    return matches >= 2
+
+
+def _needs_sign_flip(transactions: list[Transaction]) -> bool:
+    """Heuristic: return True if the majority of amounts are positive.
+
+    Credit card PDFs that list charges as positive need sign flipping
+    so spending becomes negative.  Some issuers already use negative
+    for purchases — those don't need flipping.
+    """
+    if not transactions:
+        return False
+    positives = sum(1 for t in transactions if t.amount > 0)
+    negatives = sum(1 for t in transactions if t.amount < 0)
+    return positives > negatives
+
+
+def _flip_amounts(transactions: list[Transaction]) -> list[Transaction]:
+    """Negate every amount so the app convention holds: spending < 0, income > 0."""
+    return [
+        Transaction(
+            id=t.id,
+            date=t.date,
+            description=t.description,
+            amount=-t.amount,
+            original_description=t.original_description,
+        )
+        for t in transactions
+    ]
+
+
+def parse_pdf(file_content: bytes) -> tuple[list[Transaction], str]:
     """Extract transactions from a PDF bank statement.
 
     Uses a two-strategy approach:
@@ -473,7 +516,8 @@ def parse_pdf(file_content: bytes) -> list[Transaction]:
     separate debit/credit columns, parenthesised negatives, and various
     currency symbols.
 
-    Returns a list of ``Transaction`` objects with sequential IDs.
+    Returns ``(transactions, statement_type)`` where *statement_type* is
+    ``"credit"`` or ``"debit"``.
     Raises ``ValueError`` if no transactions can be extracted.
     """
     pdf_file = io.BytesIO(file_content)
@@ -484,6 +528,7 @@ def parse_pdf(file_content: bytes) -> list[Transaction]:
             page.extract_text() or "" for page in pdf.pages
         )
         default_year = _infer_year_from_text(full_text)
+        is_credit_card = _detect_credit_card_pdf(full_text)
 
         # Strategy 1: table extraction
         transactions = _extract_from_tables(pdf, default_year)
@@ -495,4 +540,8 @@ def parse_pdf(file_content: bytes) -> list[Transaction]:
     if not transactions:
         raise ValueError("No transaction table found in PDF.")
 
-    return transactions
+    statement_type = "credit" if is_credit_card else "debit"
+    if is_credit_card and _needs_sign_flip(transactions):
+        transactions = _flip_amounts(transactions)
+
+    return transactions, statement_type

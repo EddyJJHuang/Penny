@@ -1,12 +1,14 @@
 Mode: local-only
-Accuracy: 96.5%
-Match rate: 96.3%
+Accuracy: 96.03%
+Match rate: 96.5%
 
-Misclassified (15):
+Misclassified (17):
   GOLDEN GATE PARK EVENTS: expected=Entertainment, got=Uncategorized
+  PG&E ONLINE PAYMENT: expected=Utilities, got=Credit Card Payment
   TARGET RETURN CREDIT: expected=Income / Refund, got=Shopping
   ETSY SHOP PAYOUT: expected=Income / Refund, got=Shopping
   AIRBNB HOST PAYOUT: expected=Income / Refund, got=Travel
+  CHKCARD MISC ONLINE PMT: expected=Uncategorized, got=Credit Card Payment
   UBER EATS PROMO CREDIT: expected=Income / Refund, got=Dining Out
   DOORDASH PROMO REFUND: expected=Income / Refund, got=Dining Out
   AMAZON PRIME REFUND: expected=Income / Refund, got=Subscriptions

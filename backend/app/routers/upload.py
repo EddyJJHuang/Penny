@@ -54,9 +54,9 @@ async def upload_file(file: UploadFile) -> UploadResponse:
 
     try:
         if file_type == "csv":
-            transactions, bank_format = parse_csv(content)
+            transactions, bank_format, statement_type = parse_csv(content)
         else:
-            transactions = parse_pdf(content)
+            transactions, statement_type = parse_pdf(content)
             bank_format = "pdf"
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -65,5 +65,6 @@ async def upload_file(file: UploadFile) -> UploadResponse:
         transactions=transactions,
         file_type=file_type,
         bank_format=bank_format,
+        statement_type=statement_type,
         row_count=len(transactions),
     )
