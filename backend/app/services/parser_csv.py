@@ -140,9 +140,27 @@ def _parse_date(raw: str, fmt: str) -> str:
 
 
 def _parse_amount(raw: str) -> float:
-    """Parse an amount string, stripping currency symbols and whitespace."""
-    cleaned = raw.strip().replace("$", "").replace(",", "")
-    return float(cleaned)
+    """Parse an amount string, handling various bank export conventions.
+
+    Supports: negative signs, parenthesised negatives ``(85.32)``,
+    currency symbols (``$``, ``€``, ``£``), and thousand separators.
+    """
+    cleaned = raw.strip()
+    if not cleaned:
+        return 0.0
+
+    # Detect parenthesised negative: (85.32) → -85.32
+    is_negative = False
+    if cleaned.startswith("(") and cleaned.endswith(")"):
+        is_negative = True
+        cleaned = cleaned[1:-1]
+    elif cleaned.startswith("-"):
+        is_negative = True
+        cleaned = cleaned[1:]
+
+    cleaned = cleaned.replace("$", "").replace("€", "").replace("£", "").replace(",", "").strip()
+    value = float(cleaned)
+    return -value if is_negative else value
 
 
 def _row_to_transaction(
@@ -150,7 +168,12 @@ def _row_to_transaction(
     fmt: BankFormat,
     index: int,
 ) -> Transaction:
-    """Convert a single CSV row into a ``Transaction``."""
+    """Convert a single CSV row into a ``Transaction``.
+
+    For Wells Fargo (positional access), also checks the debit marker in
+    column 2: if the amount is positive but column 2 contains ``*``, the
+    transaction is a debit-card purchase and the amount is negated.
+    """
     if isinstance(row, list):
         # Positional access (Wells Fargo — no header)
         raw_date = row[int(fmt.date_column)]
@@ -162,11 +185,21 @@ def _row_to_transaction(
         raw_amount = row[fmt.amount_column]
 
     description = raw_desc.strip()
+    amount = _parse_amount(raw_amount)
+
+    # Wells Fargo: column 2 is a debit-card marker ("*").  Some WF exports
+    # omit the negative sign on debits, so if amount > 0 and the marker is
+    # present, negate it to match the app convention (spending < 0).
+    if isinstance(row, list) and fmt is WELLS_FARGO:
+        marker = row[2].strip() if len(row) > 2 else ""
+        if marker == "*" and amount > 0:
+            amount = -amount
+
     return Transaction(
         id=f"txn_{index:03d}",
         date=_parse_date(raw_date, fmt.date_format),
         description=description,
-        amount=_parse_amount(raw_amount),
+        amount=amount,
         original_description=description,
     )
 
