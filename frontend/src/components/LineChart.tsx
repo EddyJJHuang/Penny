@@ -26,20 +26,56 @@ interface LineChartProps {
   transactions: Transaction[];
 }
 
+/** Return the ISO week label "YYYY-Www" for a date string "YYYY-MM-DD". */
+function isoWeekLabel(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00");
+  const thursday = new Date(d);
+  thursday.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 3);
+  const year = thursday.getFullYear();
+  const jan4 = new Date(year, 0, 4);
+  const week = Math.ceil(
+    ((thursday.getTime() - jan4.getTime()) / 86400000 + ((jan4.getDay() + 6) % 7) + 1) / 7
+  );
+  return `${year}-W${String(week).padStart(2, "0")}`;
+}
+
 export function SpendingLineChart({ transactions }: LineChartProps) {
-  // Aggregate monthly spending (debits only)
-  const monthlyTotals: Record<string, number> = {};
-  for (const txn of transactions) {
-    if (txn.amount >= 0) continue;
-    const month = txn.date.slice(0, 7);
-    monthlyTotals[month] = (monthlyTotals[month] ?? 0) + Math.abs(txn.amount);
+  const debits = transactions.filter((t) => t.amount < 0);
+
+  // Determine granularity: weekly if ≤3 distinct months, otherwise monthly
+  const distinctMonths = new Set(debits.map((t) => t.date.slice(0, 7))).size;
+  const useWeekly = distinctMonths <= 3;
+
+  const buckets: Record<string, number> = {};
+  for (const txn of debits) {
+    const key = useWeekly ? isoWeekLabel(txn.date) : txn.date.slice(0, 7);
+    buckets[key] = (buckets[key] ?? 0) + Math.abs(txn.amount);
   }
 
-  const months = Object.keys(monthlyTotals).sort();
-  const values = months.map((m) => Math.round(monthlyTotals[m] * 100) / 100);
+  const months = Object.keys(buckets).sort();
+  const values = months.map((m) => Math.round(buckets[m] * 100) / 100);
+
+  // Format x-axis labels to be human-readable
+  const labels = months.map((key) => {
+    if (useWeekly) {
+      // "2026-W05" → "Feb W5"
+      const [yr, wPart] = key.split("-W");
+      const weekNum = parseInt(wPart, 10);
+      // Approximate: week 1 starts Jan 4
+      const jan4 = new Date(parseInt(yr, 10), 0, 4);
+      const monday = new Date(jan4);
+      monday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7) + (weekNum - 1) * 7);
+      return monday.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    }
+    const [yr, mo] = key.split("-");
+    return new Date(parseInt(yr, 10), parseInt(mo, 10) - 1, 1).toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+    });
+  });
 
   const data = {
-    labels: months,
+    labels,
     datasets: [
       {
         label: "Total Spending",
