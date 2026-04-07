@@ -31,13 +31,19 @@ _VALID_CATEGORIES: set[str] = {c.value for c in Category}
 
 _SYSTEM_PROMPT = """\
 You are a bank transaction classifier. For each transaction, assign exactly one
-category from the list below. Respond ONLY with a JSON array — no markdown
-fences, no commentary.
+category from the list below and a confidence level. Respond ONLY with a JSON
+array — no markdown fences, no commentary.
 
 Categories (use these exact names):
   Groceries, Dining Out, Transportation, Gas & Auto, Shopping, Entertainment,
   Subscriptions, Utilities, Health & Pharmacy, Housing, Education, Travel,
   Income / Refund, Credit Card Payment, Uncategorized
+
+Confidence levels:
+  - "high": description contains a clear, recognisable merchant or keyword
+  - "medium": category is likely but description is somewhat ambiguous
+  - "low": description is vague, contains only reference numbers, or could
+    plausibly belong to multiple categories
 
 Edge-case rules:
   - Coffee shops (Starbucks, Peet's) → Dining Out (NOT Groceries)
@@ -49,13 +55,15 @@ Edge-case rules:
   - Credit card payments ("AUTOMATIC PAYMENT", "PAYMENT THANK YOU", "ONLINE PAYMENT") → Credit Card Payment (NOT Income / Refund)
 
 Input: a JSON array of objects with "id" and "description" fields.
-Output: a JSON array of objects with "id" and "category" fields, in the same order.
+Output: a JSON array of objects with "id", "category", and "confidence" fields, in the same order.
 
 Example input:
-[{"id": "txn_001", "description": "SQ *BURRITO KING 94105"}]
+[{"id": "txn_001", "description": "SQ *BURRITO KING 94105"},
+ {"id": "txn_002", "description": "ACH DEBIT 8374629301"}]
 
 Example output:
-[{"id": "txn_001", "category": "Dining Out"}]
+[{"id": "txn_001", "category": "Dining Out", "confidence": "high"},
+ {"id": "txn_002", "category": "Uncategorized", "confidence": "low"}]
 """
 
 
@@ -104,6 +112,8 @@ def _parse_response(
         logger.warning("Gemini response is not a list: %s", raw_text[:200])
         return [None] * len(transactions)
 
+    _confidence_map = {"high": Confidence.HIGH, "medium": Confidence.MEDIUM, "low": Confidence.LOW}
+
     for item in items:
         if not isinstance(item, dict):
             continue
@@ -114,11 +124,15 @@ def _parse_response(
         if txn_id not in txn_map or category_name not in _VALID_CATEGORIES:
             continue
 
+        confidence = _confidence_map.get(
+            str(item.get("confidence", "")).lower(), Confidence.MEDIUM
+        )
+
         result_by_id[txn_id] = ClassifiedTransaction(
             id=txn_id,
             description=txn_map[txn_id].description,
             category=Category(category_name),
-            confidence=Confidence.MEDIUM,
+            confidence=confidence,
             method=ClassificationMethod.GEMINI,
         )
 
