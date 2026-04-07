@@ -139,14 +139,24 @@ _AMOUNT_NAMES = {"amount", "debit", "credit", "transaction amount",
                  "debit amount", "credit amount", "withdrawal", "deposit",
                  "charges", "credits", "withdrawals", "deposits",
                  "$ amount"}
+# Header substrings that indicate a running/ending balance column — never treat as amount
+_BALANCE_COL_KEYWORDS = ("balance",)
 
 
 def _is_header_row(row: list[str | None]) -> bool:
-    """Return ``True`` if the row looks like a table header."""
-    cells = {(c or "").strip().lower() for c in row}
-    has_date = bool(cells & _DATE_NAMES)
-    has_desc = bool(cells & _DESC_NAMES)
-    has_amt = bool(cells & _AMOUNT_NAMES)
+    """Return ``True`` if the row looks like a table header.
+
+    Uses substring matching so multi-word headers like "Deposits/Additions"
+    or "Withdrawals/Subtractions" are recognised correctly.
+    """
+    cells = [re.sub(r"\s+", " ", (c or "").strip().lower()) for c in row]
+    has_date = any(c in _DATE_NAMES for c in cells)
+    has_desc = any(c in _DESC_NAMES for c in cells)
+    has_amt = any(
+        c in _AMOUNT_NAMES
+        or any(kw in c for kw in ("withdrawal", "deposit", "debit", "credit", "subtraction", "addition"))
+        for c in cells
+    )
     return has_date and has_desc and has_amt
 
 
@@ -157,22 +167,36 @@ def _resolve_column_indices(
 
     *debit_idx* and *credit_idx* are set when the statement uses separate
     columns for debits and credits instead of a single signed amount column.
+
+    Matching is substring-based so headers like "Deposits/Additions" or
+    "Withdrawals/Subtractions" (common in Wells Fargo / BoA statements) are
+    handled correctly.  Columns whose header contains "balance" are always
+    skipped — they represent running balances, not transaction amounts.
     """
-    lower = [(c or "").strip().lower() for c in header]
+    # Normalise: lowercase, collapse whitespace/newlines
+    lower = [re.sub(r"\s+", " ", (c or "").strip().lower()) for c in header]
 
     date_idx = desc_idx = amount_idx = -1
     debit_idx: int | None = None
     credit_idx: int | None = None
 
     for i, name in enumerate(lower):
+        # Always skip balance/running-balance columns
+        if any(kw in name for kw in _BALANCE_COL_KEYWORDS):
+            continue
+
         if name in _DATE_NAMES and date_idx == -1:
             date_idx = i
         elif name in _DESC_NAMES and desc_idx == -1:
             desc_idx = i
-        elif name in ("debit", "debit amount", "withdrawal", "withdrawals", "charges"):
-            debit_idx = i
-        elif name in ("credit", "credit amount", "deposit", "deposits", "credits"):
-            credit_idx = i
+        # Debit/withdrawal column — exact or substring
+        elif any(kw in name for kw in ("withdrawal", "subtraction", "debit", "charge")):
+            if debit_idx is None:
+                debit_idx = i
+        # Credit/deposit column — exact or substring
+        elif any(kw in name for kw in ("deposit", "addition", "credit")):
+            if credit_idx is None:
+                credit_idx = i
         elif name in _AMOUNT_NAMES and amount_idx == -1:
             amount_idx = i
 
@@ -232,11 +256,39 @@ def _parse_amount_str(raw: str) -> float | None:
 # Strategy 1: Table-based extraction
 # ---------------------------------------------------------------------------
 
+# Table extraction strategies to try in order.
+# Only the default line-based strategy is used: the text-alignment strategy
+# can misalign columns in borderless statements (e.g. Wells Fargo splits
+# "12/22" into "2/22" and a stray "1"), producing wrong dates.  Those PDFs
+# are handled correctly by the text-line fallback (Strategy 2) instead.
+_TABLE_STRATEGIES: list[dict] = [
+    {},  # pdfplumber default — line-based detection only
+]
+
+
 def _extract_from_tables(
     pdf: pdfplumber.PDF,
     default_year: int | None = None,
 ) -> list[Transaction]:
-    """Extract transactions from pdfplumber-detected tables."""
+    """Extract transactions from pdfplumber-detected tables.
+
+    Tries multiple extraction strategies so that both bordered PDFs (Chase,
+    Amex) and borderless columnar PDFs (Wells Fargo, BoA checking) are handled.
+    """
+    for strategy in _TABLE_STRATEGIES:
+        transactions = _extract_from_tables_with_strategy(pdf, default_year, strategy)
+        if transactions:
+            print(f"[parser] table strategy {strategy or 'default'}: {len(transactions)} transactions")
+            return transactions
+    return []
+
+
+def _extract_from_tables_with_strategy(
+    pdf: pdfplumber.PDF,
+    default_year: int | None,
+    table_settings: dict,
+) -> list[Transaction]:
+    """Run table extraction with a specific pdfplumber table_settings dict."""
     transactions: list[Transaction] = []
     date_idx = desc_idx = amount_idx = 0
     debit_idx: int | None = None
@@ -244,7 +296,7 @@ def _extract_from_tables(
     columns_resolved = False
 
     for page in pdf.pages:
-        tables = page.extract_tables()
+        tables = page.extract_tables(table_settings) if table_settings else page.extract_tables()
         for table in tables:
             for row in table:
                 if not row or all(c is None or c.strip() == "" for c in row):
@@ -387,6 +439,30 @@ _TEXT_LINE_SHORT_DATE_RE = re.compile(
     r"(?P<amount>-?\(?\$?[\d,]+\.\d{2}\)?)\s*$"
 )
 
+# Matches a line that ends with two monetary amounts separated by whitespace.
+# Group 1 = everything before the trailing balance, group 2 = transaction amount,
+# group 3 = running/ending balance to discard.
+# Both amounts must have a decimal point to exclude bare integers like card/ref numbers.
+_TWO_TRAILING_AMOUNTS_RE = re.compile(
+    r"^(.*?)\s+(-?\(?\$?[\d,]+\.\d+\)?)\s+(-?\(?\$?[\d,]+\.\d+\)?)\s*$"
+)
+
+
+def _strip_trailing_balance(line: str) -> tuple[str, float | None]:
+    """If *line* ends with two monetary amounts, strip the last one (running balance).
+
+    Returns ``(stripped_line, ending_balance)`` where *ending_balance* is the
+    parsed running-balance value, or ``None`` if no balance was detected.
+    Stripping only happens when BOTH trailing tokens contain a decimal point,
+    which excludes reference numbers, card numbers, and cheque numbers.
+    """
+    m = _TWO_TRAILING_AMOUNTS_RE.match(line)
+    if m:
+        balance = _parse_amount_str(m.group(3))
+        return f"{m.group(1)} {m.group(2)}", balance
+    return line, None
+
+
 # Section headers to skip
 _SKIP_SECTIONS = re.compile(
     r"(INTEREST\s+CHARGE|TOTAL\s+|MINIMUM\s+PAYMENT|"
@@ -401,8 +477,17 @@ def _extract_from_text(
     pdf: pdfplumber.PDF,
     default_year: int | None = None,
 ) -> list[Transaction]:
-    """Fallback extraction: parse transaction lines from raw text."""
+    """Fallback extraction: parse transaction lines from raw text.
+
+    Sign inference for debit/checking statements (e.g. Wells Fargo):
+    - When a line ends with a running balance, compare it to the previous
+      ending balance.  If the delta matches the transaction amount exactly,
+      the sign is unambiguous.
+    - For intermediate lines in multi-transaction days (no balance column),
+      fall back to description-keyword heuristics.
+    """
     transactions: list[Transaction] = []
+    prev_balance: float | None = None
 
     for page in pdf.pages:
         text = page.extract_text()
@@ -413,6 +498,10 @@ def _extract_from_text(
             line = line.strip()
             if not line:
                 continue
+
+            # Strip trailing running balance if present (e.g. Wells Fargo, BoA
+            # checking statements that append ending daily balance to each row).
+            line, ending_balance = _strip_trailing_balance(line)
 
             # Try full-date pattern first
             m = _TEXT_LINE_FULL_DATE_RE.match(line)
@@ -443,6 +532,36 @@ def _extract_from_text(
             amount = _parse_amount_str(amount_str)
             if amount is None:
                 continue
+
+            # --- Sign inference ---
+            # Amount from raw text is always positive (no sign in debit columns).
+            # Strategy 1: compare ending balance to previous balance.
+            if ending_balance is not None and prev_balance is not None:
+                delta = ending_balance - prev_balance
+                if abs(abs(delta) - abs(amount)) < 0.02:
+                    # Single-transaction day: delta == ±amount exactly
+                    amount = abs(amount) if delta >= 0 else -abs(amount)
+                # Multi-transaction day: delta ≠ amount — fall through to keyword heuristic
+            elif amount > 0:
+                # Strategy 2: keyword heuristic for known withdrawal patterns.
+                # Only negate when the description is unambiguous — err on the
+                # side of keeping it positive rather than wrongly negating income.
+                desc_lower = desc.lower()
+                if any(kw in desc_lower for kw in (
+                    "atm withdrawal",
+                    "non-wf atm withdrawal",
+                    "non-wells fargo atm",
+                    "zelle to ",
+                    "autopay",
+                    "recurring payment",
+                    "transaction fee",
+                    "monthly fee",
+                    "service fee",
+                )):
+                    amount = -abs(amount)
+
+            if ending_balance is not None:
+                prev_balance = ending_balance
 
             seq = len(transactions) + 1
             transactions.append(
@@ -485,12 +604,13 @@ def parse_pdf(file_content: bytes) -> list[Transaction]:
         )
         default_year = _infer_year_from_text(full_text)
 
-        # Strategy 1: table extraction
+        # Strategy 1: table extraction (tries line-based then text-alignment)
         transactions = _extract_from_tables(pdf, default_year)
 
         # Strategy 2: text-line fallback
         if not transactions:
             transactions = _extract_from_text(pdf, default_year)
+            print(f"[parser] text fallback: {len(transactions)} transactions")
 
     if not transactions:
         raise ValueError("No transaction table found in PDF.")

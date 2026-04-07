@@ -145,23 +145,31 @@ def _call_gemini_with_retry(
         try:
             response = client.models.generate_content(
                 model=settings.GEMINI_MODEL,
-                contents=[_SYSTEM_PROMPT, prompt],
+                contents=prompt,
                 config=genai_types.GenerateContentConfig(
+                    system_instruction=_SYSTEM_PROMPT,
                     temperature=0.0,
                 ),
             )
             return response.text
-        except Exception:
+        except Exception as exc:
             if attempt == max_retries:
-                logger.exception(
-                    "Gemini API failed after %d retries", max_retries
+                logger.error(
+                    "Gemini API failed after %d retries — transactions will be "
+                    "marked Uncategorized. Last error: %s: %s",
+                    max_retries,
+                    type(exc).__name__,
+                    exc,
                 )
                 return None
 
             delay = base_delay * (2 ** attempt)
             logger.warning(
-                "Gemini API attempt %d failed, retrying in %.1fs",
+                "Gemini API attempt %d/%d failed (%s: %s), retrying in %.1fs",
                 attempt + 1,
+                max_retries,
+                type(exc).__name__,
+                exc,
                 delay,
             )
             time.sleep(delay)
