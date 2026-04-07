@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 
 from app.services.parser_csv import (
-    BOFA,
-    CHASE,
+    BOFA_DEBIT,
+    CHASE_CREDIT,
     WELLS_FARGO,
     detect_bank_format,
     parse_csv,
@@ -41,17 +41,21 @@ def wellsfargo_csv() -> str:
 # ---------------------------------------------------------------------------
 
 class TestDetectBankFormat:
-    def test_chase_header(self) -> None:
+    def test_chase_credit_header(self) -> None:
         header = ["Transaction Date", "Post Date", "Description", "Category", "Type", "Amount"]
-        assert detect_bank_format(header) == CHASE
+        fmt = detect_bank_format(header)
+        assert fmt == CHASE_CREDIT
+        assert fmt.is_credit_card is True
 
-    def test_bofa_header(self) -> None:
+    def test_bofa_debit_header(self) -> None:
         header = ["Date", "Description", "Amount", "Running Bal."]
-        assert detect_bank_format(header) == BOFA
+        fmt = detect_bank_format(header)
+        assert fmt == BOFA_DEBIT
+        assert fmt.is_credit_card is False
 
     def test_strips_bom_and_whitespace(self) -> None:
         header = ["\ufeffTransaction Date", " Post Date ", "Description", "Category", "Type", "Amount"]
-        assert detect_bank_format(header) == CHASE
+        assert detect_bank_format(header) == CHASE_CREDIT
 
     def test_unknown_header_raises(self) -> None:
         with pytest.raises(ValueError, match="Unrecognised CSV header"):
@@ -64,37 +68,49 @@ class TestDetectBankFormat:
 
 class TestChaseParser:
     def test_row_count(self, chase_csv: str) -> None:
-        txns, _ = parse_csv(chase_csv)
+        txns, _, _ = parse_csv(chase_csv)
         assert len(txns) == 10
 
     def test_bank_format_detected(self, chase_csv: str) -> None:
-        _, bank = parse_csv(chase_csv)
+        _, bank, _ = parse_csv(chase_csv)
         assert bank == "chase"
 
+    def test_detected_as_credit_card(self, chase_csv: str) -> None:
+        _, _, stmt_type = parse_csv(chase_csv)
+        assert stmt_type == "credit"
+
+    def test_no_sign_flip_when_already_negative(self, chase_csv: str) -> None:
+        """Chase CC already uses negative for purchases — no flip needed."""
+        txns, _, _ = parse_csv(chase_csv)
+        # Purchases remain negative, payment remains positive
+        assert txns[0].amount < 0
+        payment = next(t for t in txns if "PAYMENT" in t.description)
+        assert payment.amount > 0
+
     def test_date_normalised_to_iso(self, chase_csv: str) -> None:
-        txns, _ = parse_csv(chase_csv)
+        txns, _, _ = parse_csv(chase_csv)
         assert txns[0].date == "2025-01-03"
 
     def test_description_preserved(self, chase_csv: str) -> None:
-        txns, _ = parse_csv(chase_csv)
+        txns, _, _ = parse_csv(chase_csv)
         assert txns[0].description == "WHOLEFDS MKT 10234"
 
     def test_negative_amount(self, chase_csv: str) -> None:
-        txns, _ = parse_csv(chase_csv)
+        txns, _, _ = parse_csv(chase_csv)
         assert txns[0].amount == pytest.approx(-85.32)
 
     def test_positive_amount_payment(self, chase_csv: str) -> None:
-        txns, _ = parse_csv(chase_csv)
+        txns, _, _ = parse_csv(chase_csv)
         payment = next(t for t in txns if "PAYMENT" in t.description)
         assert payment.amount == pytest.approx(1500.00)
 
     def test_ids_sequential(self, chase_csv: str) -> None:
-        txns, _ = parse_csv(chase_csv)
+        txns, _, _ = parse_csv(chase_csv)
         assert txns[0].id == "txn_001"
         assert txns[9].id == "txn_010"
 
     def test_original_description_matches(self, chase_csv: str) -> None:
-        txns, _ = parse_csv(chase_csv)
+        txns, _, _ = parse_csv(chase_csv)
         for txn in txns:
             assert txn.original_description == txn.description
 
@@ -105,27 +121,27 @@ class TestChaseParser:
 
 class TestBofaParser:
     def test_row_count(self, bofa_csv: str) -> None:
-        txns, _ = parse_csv(bofa_csv)
+        txns, _, _ = parse_csv(bofa_csv)
         assert len(txns) == 10
 
     def test_bank_format_detected(self, bofa_csv: str) -> None:
-        _, bank = parse_csv(bofa_csv)
+        _, bank, _ = parse_csv(bofa_csv)
         assert bank == "bofa"
 
     def test_date_normalised_to_iso(self, bofa_csv: str) -> None:
-        txns, _ = parse_csv(bofa_csv)
+        txns, _, _ = parse_csv(bofa_csv)
         assert txns[0].date == "2025-01-02"
 
     def test_description_preserved(self, bofa_csv: str) -> None:
-        txns, _ = parse_csv(bofa_csv)
+        txns, _, _ = parse_csv(bofa_csv)
         assert txns[0].description == "WHOLEFDS MKT 10234"
 
     def test_negative_debit(self, bofa_csv: str) -> None:
-        txns, _ = parse_csv(bofa_csv)
+        txns, _, _ = parse_csv(bofa_csv)
         assert txns[0].amount == pytest.approx(-72.15)
 
     def test_positive_credit(self, bofa_csv: str) -> None:
-        txns, _ = parse_csv(bofa_csv)
+        txns, _, _ = parse_csv(bofa_csv)
         zelle = next(t for t in txns if "ZELLE" in t.description)
         assert zelle.amount == pytest.approx(250.00)
 
@@ -136,27 +152,27 @@ class TestBofaParser:
 
 class TestWellsFargoParser:
     def test_row_count(self, wellsfargo_csv: str) -> None:
-        txns, _ = parse_csv(wellsfargo_csv)
+        txns, _, _ = parse_csv(wellsfargo_csv)
         assert len(txns) == 10
 
     def test_bank_format_detected(self, wellsfargo_csv: str) -> None:
-        _, bank = parse_csv(wellsfargo_csv)
+        _, bank, _ = parse_csv(wellsfargo_csv)
         assert bank == "wellsfargo"
 
     def test_date_normalised_to_iso(self, wellsfargo_csv: str) -> None:
-        txns, _ = parse_csv(wellsfargo_csv)
+        txns, _, _ = parse_csv(wellsfargo_csv)
         assert txns[0].date == "2025-01-03"
 
     def test_description_from_column_4(self, wellsfargo_csv: str) -> None:
-        txns, _ = parse_csv(wellsfargo_csv)
+        txns, _, _ = parse_csv(wellsfargo_csv)
         assert txns[0].description == "WHOLEFDS MKT 10234"
 
     def test_negative_debit(self, wellsfargo_csv: str) -> None:
-        txns, _ = parse_csv(wellsfargo_csv)
+        txns, _, _ = parse_csv(wellsfargo_csv)
         assert txns[0].amount == pytest.approx(-62.34)
 
     def test_positive_deposit(self, wellsfargo_csv: str) -> None:
-        txns, _ = parse_csv(wellsfargo_csv)
+        txns, _, _ = parse_csv(wellsfargo_csv)
         deposit = next(t for t in txns if "DIRECT DEPOSIT" in t.description)
         assert deposit.amount == pytest.approx(2500.00)
 
@@ -171,15 +187,40 @@ class TestEdgeCases:
             parse_csv("")
 
     def test_bytes_input(self, chase_csv: str) -> None:
-        txns, bank = parse_csv(chase_csv.encode("utf-8"))
+        txns, bank, _ = parse_csv(chase_csv.encode("utf-8"))
         assert bank == "chase"
         assert len(txns) == 10
 
     def test_utf8_bom_input(self, chase_csv: str) -> None:
         content_with_bom = "\ufeff" + chase_csv
-        txns, bank = parse_csv(content_with_bom)
+        txns, bank, _ = parse_csv(content_with_bom)
         assert bank == "chase"
         assert len(txns) == 10
+
+    def test_bofa_debit_statement_type(self, bofa_csv: str) -> None:
+        _, _, stmt_type = parse_csv(bofa_csv)
+        assert stmt_type == "debit"
+
+    def test_wellsfargo_debit_statement_type(self, wellsfargo_csv: str) -> None:
+        _, _, stmt_type = parse_csv(wellsfargo_csv)
+        assert stmt_type == "debit"
+
+    def test_credit_card_positive_amounts_flipped(self) -> None:
+        """Credit card CSV with positive = charges should be sign-flipped."""
+        csv_text = (
+            "Posted Date,Payee,Amount\n"
+            "01/03/2025,WHOLEFDS MKT,85.32\n"
+            "01/05/2025,UBER EATS,24.50\n"
+            "01/10/2025,PAYMENT RECEIVED,-500.00\n"
+        )
+        txns, bank, stmt_type = parse_csv(csv_text)
+        assert stmt_type == "credit"
+        assert bank == "bofa"
+        # Purchases should now be negative (flipped)
+        assert txns[0].amount == pytest.approx(-85.32)
+        assert txns[1].amount == pytest.approx(-24.50)
+        # Payment should now be positive (flipped)
+        assert txns[2].amount == pytest.approx(500.00)
 
     def test_unknown_format_raises(self) -> None:
         csv_text = "Foo,Bar,Baz\n1,2,3\n"

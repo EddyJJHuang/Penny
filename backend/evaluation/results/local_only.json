@@ -1,10 +1,16 @@
 {
   "mode": "local-only",
-  "accuracy": 96.5,
-  "matched": 412,
-  "unmatched": 16,
-  "match_rate": 96.3,
+  "accuracy": 96.03,
+  "matched": 413,
+  "unmatched": 15,
+  "match_rate": 96.5,
   "report": {
+    "Credit Card Payment": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
     "Dining Out": {
       "precision": 0.9512195121951219,
       "recall": 1.0,
@@ -78,28 +84,28 @@
       "support": 34.0
     },
     "Uncategorized": {
-      "precision": 0.9375,
-      "recall": 1.0,
-      "f1-score": 0.967741935483871,
+      "precision": 0.9333333333333333,
+      "recall": 0.9333333333333333,
+      "f1-score": 0.9333333333333333,
       "support": 15.0
     },
     "Utilities": {
       "precision": 1.0,
-      "recall": 1.0,
-      "f1-score": 1.0,
+      "recall": 0.9583333333333334,
+      "f1-score": 0.9787234042553191,
       "support": 24.0
     },
-    "accuracy": 0.9649532710280374,
+    "accuracy": 0.9602803738317757,
     "macro avg": {
-      "precision": 0.9710056583609052,
-      "recall": 0.9694057430664573,
-      "f1-score": 0.9665139959072986,
+      "precision": 0.9059941700257338,
+      "recall": 0.8975564713064713,
+      "f1-score": 0.8983673829871308,
       "support": 428.0
     },
     "weighted avg": {
-      "precision": 0.9678288351470061,
-      "recall": 0.9649532710280374,
-      "f1-score": 0.9622117029708261,
+      "precision": 0.9676828071096228,
+      "recall": 0.9602803738317757,
+      "f1-score": 0.9598127138817365,
       "support": 428.0
     }
   },
@@ -108,6 +114,11 @@
       "description": "GOLDEN GATE PARK EVENTS",
       "expected": "Entertainment",
       "predicted": "Uncategorized"
+    },
+    {
+      "description": "PG&E ONLINE PAYMENT",
+      "expected": "Utilities",
+      "predicted": "Credit Card Payment"
     },
     {
       "description": "TARGET RETURN CREDIT",
@@ -123,6 +134,11 @@
       "description": "AIRBNB HOST PAYOUT",
       "expected": "Income / Refund",
       "predicted": "Travel"
+    },
+    {
+      "description": "CHKCARD MISC ONLINE PMT",
+      "expected": "Uncategorized",
+      "predicted": "Credit Card Payment"
     },
     {
       "description": "UBER EATS PROMO CREDIT",

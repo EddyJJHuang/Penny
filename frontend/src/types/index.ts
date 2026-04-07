@@ -80,6 +80,7 @@ export interface UploadResponse {
   transactions: Transaction[];
   file_type: "csv" | "pdf";
   bank_format: string;
+  statement_type: "credit" | "debit";
   row_count: number;
 }
 

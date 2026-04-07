@@ -99,6 +99,10 @@ class UploadResponse(BaseModel):
     transactions: list[Transaction]
     file_type: Literal["csv", "pdf"]
     bank_format: str = Field(..., examples=["chase"])
+    statement_type: Literal["credit", "debit"] = Field(
+        ..., examples=["debit"],
+        description="Whether the statement is from a credit card or debit/checking account.",
+    )
     row_count: int = Field(..., examples=[142])
 
 
