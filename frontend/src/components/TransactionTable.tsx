@@ -191,10 +191,10 @@ export function TransactionTable({
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-3xl font-black text-gray-900 tracking-tight">
             Review Transactions
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-base text-gray-500 font-medium mt-1">
             {transactions.length} transactions
             {hasResults
               ? " classified. Review and correct categories below."
@@ -223,7 +223,7 @@ export function TransactionTable({
           {hasResults && (
             <button
               type="button"
-              className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-emerald-700"
+              className="rounded-full bg-gray-900 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-gray-900/10 transition hover:bg-gray-800 active:scale-95"
               onClick={onContinue}
             >
               Continue to Dashboard
@@ -397,11 +397,14 @@ export function TransactionTable({
         </div>
       )}
 
-      {/* Table */}
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      {/* 
+        Main Data Table 
+        Designed with a translucent backdrop and large rounded corners to be consistent with the modern dashboard aesthetics 
+      */}
+      <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white/60 backdrop-blur-2xl shadow-2xl">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-100">
+            <thead className="bg-white/40">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Date
@@ -468,12 +471,12 @@ export function TransactionTable({
                                 e.target.value as Category
                               )
                             }
-                            className={`rounded border px-2 py-1 text-xs focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 ${
+                            className={`rounded-lg border px-3 py-1.5 text-xs font-medium focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/20 transition-all shadow-sm ${
                               attention === "critical"
                                 ? "border-red-300 bg-red-50 text-red-800"
                                 : attention === "warning"
                                   ? "border-amber-300 bg-amber-50 text-amber-800"
-                                  : "border-gray-200 bg-white text-gray-700"
+                                  : "border-gray-200 bg-white text-gray-700 hover:border-emerald-300"
                             }`}
                           >
                             {ALL_CATEGORIES.map((cat) => (

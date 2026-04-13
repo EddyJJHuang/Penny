@@ -67,9 +67,9 @@ function App() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-[#fafcff] font-sans selection:bg-emerald-100 selection:text-emerald-900">
       {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+      <header className="sticky top-0 z-20 border-b border-gray-100 bg-white/70 backdrop-blur-xl transition-all">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-2.5">
             {/* Logo */}
@@ -91,7 +91,7 @@ function App() {
           {currentStep > 0 && (
             <button
               type="button"
-              className="flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 transition hover:border-gray-300 hover:text-gray-700 sm:text-sm"
+              className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-700 transition-all hover:bg-gray-50 hover:shadow-sm active:scale-95 sm:text-sm"
               onClick={handleStartOver}
             >
               <svg

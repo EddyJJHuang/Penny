@@ -7,7 +7,7 @@ interface StepperProps {
 
 export function Stepper({ steps, currentStep }: StepperProps) {
   return (
-    <nav className="border-b border-gray-100 bg-white px-4 py-4 sm:py-5">
+    <nav className="border-b border-gray-100 bg-white/50 backdrop-blur-md px-4 py-6">
       <div className="mx-auto flex max-w-lg items-center justify-center gap-1 sm:gap-2">
         {steps.map((step, index) => {
           const isCompleted = index < currentStep;
@@ -16,14 +16,17 @@ export function Stepper({ steps, currentStep }: StepperProps) {
           return (
             <div key={step.label} className="flex items-center">
               <div className="flex items-center gap-1.5 sm:gap-2">
-                {/* Circle */}
+                {/* 
+                  Progress Circle Indicator
+                  Uses dynamic styling: emerald gradient for completed, dark styling for current step, and basic outline for upcoming steps
+                */}
                 <div
-                  className={`flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 ${
+                  className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-xs sm:text-sm font-bold transition-all duration-500 ${
                     isCompleted
-                      ? "bg-emerald-600 text-white scale-100"
+                      ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md scale-105"
                       : isCurrent
-                        ? "bg-emerald-600 text-white ring-4 ring-emerald-100"
-                        : "bg-gray-200 text-gray-400"
+                        ? "bg-gray-900 text-white ring-[4px] ring-gray-900/10 shadow-lg scale-110"
+                        : "bg-white text-gray-400 border-2 border-gray-200"
                   }`}
                 >
                   {isCompleted ? (
@@ -48,10 +51,12 @@ export function Stepper({ steps, currentStep }: StepperProps) {
                 {/* Label — hidden on very small screens */}
                 <div className="hidden sm:block">
                   <span
-                    className={`text-sm font-medium transition-colors duration-300 ${
-                      isCurrent || isCompleted
-                        ? "text-emerald-700"
-                        : "text-gray-400"
+                    className={`text-sm font-bold transition-colors duration-300 ${
+                      isCurrent 
+                        ? "text-gray-900" 
+                        : isCompleted
+                        ? "text-emerald-600"
+                        : "text-gray-400 font-medium"
                     }`}
                   >
                     {step.label}
@@ -62,7 +67,7 @@ export function Stepper({ steps, currentStep }: StepperProps) {
               {/* Connector */}
               {index < steps.length - 1 && (
                 <div
-                  className={`mx-2 sm:mx-4 h-0.5 w-8 sm:w-16 rounded transition-colors duration-500 ${
+                  className={`mx-2 sm:mx-4 h-1 w-8 sm:w-16 rounded-full transition-colors duration-500 ${
                     isCompleted ? "bg-emerald-500" : "bg-gray-200"
                   }`}
                 />
