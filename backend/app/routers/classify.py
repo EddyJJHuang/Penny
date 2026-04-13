@@ -10,7 +10,7 @@ from app.models.schemas import (
     CorrectionRequest,
     CorrectionResponse,
 )
-from app.services.classifier import classify_transactions
+from app.services.classifier import classify_transactions_async
 
 router = APIRouter()
 
@@ -22,7 +22,7 @@ _corrections: dict[str, CorrectionResponse] = {}
 @router.post("/classify", response_model=ClassifyResponse)
 async def classify(request: ClassifyRequest) -> ClassifyResponse:
     """Classify transactions using the hybrid engine (local → Gemini → fallback)."""
-    return classify_transactions(request.transactions)
+    return await classify_transactions_async(request.transactions)
 
 
 @router.patch("/classify/{transaction_id}", response_model=CorrectionResponse)

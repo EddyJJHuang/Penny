@@ -4,13 +4,17 @@ Sends batches of up to 20 unmatched transactions to the Google Gemini API
 with a structured prompt requesting JSON output.  Implements exponential
 backoff (base 2 s, max 3 retries) and returns ``None`` for any transaction
 the API fails to classify.
+
+Batches are sent concurrently using asyncio to minimize total latency.
 """
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Sequence
 
 from google import genai
@@ -26,6 +30,8 @@ from app.models.schemas import (
 )
 
 logger = logging.getLogger(__name__)
+
+_executor = ThreadPoolExecutor(max_workers=5)
 
 _VALID_CATEGORIES: set[str] = {c.value for c in Category}
 
@@ -195,13 +201,25 @@ def _call_gemini_with_retry(
 # Public API
 # ---------------------------------------------------------------------------
 
+def _classify_single_batch(
+    api_client: genai.Client,
+    batch: list[Transaction],
+) -> list[ClassifiedTransaction | None]:
+    """Classify one batch synchronously (used inside thread pool)."""
+    prompt = _build_prompt(batch)
+    raw_text = _call_gemini_with_retry(api_client, prompt)
+    if raw_text is None:
+        return [None] * len(batch)
+    return _parse_response(raw_text, batch)
+
+
 def classify_batch_gemini(
     transactions: list[Transaction],
     *,
     client: genai.Client | None = None,
     batch_size: int = settings.GEMINI_BATCH_SIZE,
 ) -> list[ClassifiedTransaction | None]:
-    """Classify transactions via the Gemini API in batches.
+    """Classify transactions via the Gemini API in batches (sequential).
 
     Returns a list the same length as *transactions*.  Each element is either
     a ``ClassifiedTransaction`` on success or ``None`` on failure.
@@ -216,12 +234,42 @@ def classify_batch_gemini(
 
     for i in range(0, len(transactions), batch_size):
         batch = transactions[i : i + batch_size]
-        prompt = _build_prompt(batch)
+        results.extend(_classify_single_batch(api_client, batch))
 
-        raw_text = _call_gemini_with_retry(api_client, prompt)
-        if raw_text is None:
-            results.extend([None] * len(batch))
-        else:
-            results.extend(_parse_response(raw_text, batch))
+    return results
+
+
+async def classify_batch_gemini_async(
+    transactions: list[Transaction],
+    *,
+    client: genai.Client | None = None,
+    batch_size: int = settings.GEMINI_BATCH_SIZE,
+) -> list[ClassifiedTransaction | None]:
+    """Classify transactions via the Gemini API with concurrent batches.
+
+    Splits transactions into batches and sends all batches in parallel
+    using a thread pool, then reassembles results in order.
+    """
+    if not transactions:
+        return []
+
+    api_client = client or _create_client()
+    loop = asyncio.get_event_loop()
+
+    batches = [
+        transactions[i : i + batch_size]
+        for i in range(0, len(transactions), batch_size)
+    ]
+
+    futures = [
+        loop.run_in_executor(_executor, _classify_single_batch, api_client, batch)
+        for batch in batches
+    ]
+
+    batch_results = await asyncio.gather(*futures)
+
+    results: list[ClassifiedTransaction | None] = []
+    for batch_result in batch_results:
+        results.extend(batch_result)
 
     return results
