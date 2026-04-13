@@ -5,6 +5,7 @@ import type {
   CorrectionRequest,
   CorrectionResponse,
   ExportRequest,
+  MultiUploadResponse,
   RecommendRequest,
   RecommendResponse,
   UploadResponse,
@@ -23,6 +24,22 @@ export async function uploadFile(file: File): Promise<UploadResponse> {
   const { data } = await api.post<UploadResponse>("/api/upload", form, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+  return data;
+}
+
+/** POST /api/upload/multi — parse multiple bank statements and merge. */
+export async function uploadMultipleFiles(
+  files: File[]
+): Promise<MultiUploadResponse> {
+  const form = new FormData();
+  for (const file of files) {
+    form.append("files", file);
+  }
+  const { data } = await api.post<MultiUploadResponse>(
+    "/api/upload/multi",
+    form,
+    { headers: { "Content-Type": "multipart/form-data" } }
+  );
   return data;
 }
 

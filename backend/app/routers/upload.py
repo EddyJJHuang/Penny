@@ -1,10 +1,10 @@
-"""POST /api/upload — parse an uploaded bank statement (CSV or PDF)."""
+"""POST /api/upload and /api/upload/multi — parse uploaded bank statements."""
 
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, UploadFile
 
-from app.models.schemas import UploadResponse
+from app.models.schemas import MultiUploadResponse, UploadResponse, UploadedFileInfo
 from app.services.parser_csv import parse_csv
 from app.services.parser_pdf import parse_pdf
 
@@ -43,14 +43,16 @@ def _detect_file_type(filename: str | None, content_type: str | None) -> str:
     )
 
 
-@router.post("/upload", response_model=UploadResponse)
-async def upload_file(file: UploadFile) -> UploadResponse:
-    """Parse an uploaded bank statement and return structured transactions."""
+async def _parse_single_file(
+    file: UploadFile,
+    id_offset: int = 0,
+) -> tuple[UploadResponse, int]:
+    """Parse one file and return an UploadResponse plus next id offset."""
     file_type = _detect_file_type(file.filename, file.content_type)
     content = await file.read()
 
     if not content:
-        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+        raise HTTPException(status_code=400, detail=f"File '{file.filename}' is empty.")
 
     try:
         if file_type == "csv":
@@ -61,10 +63,53 @@ async def upload_file(file: UploadFile) -> UploadResponse:
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
+    # Re-number transaction IDs to be globally unique across multiple files
+    for i, txn in enumerate(transactions):
+        transactions[i] = txn.model_copy(update={"id": f"txn_{id_offset + i + 1:04d}"})
+
+    next_offset = id_offset + len(transactions)
+
     return UploadResponse(
         transactions=transactions,
         file_type=file_type,
         bank_format=bank_format,
         statement_type=statement_type,
         row_count=len(transactions),
+    ), next_offset
+
+
+@router.post("/upload", response_model=UploadResponse)
+async def upload_file(file: UploadFile) -> UploadResponse:
+    """Parse an uploaded bank statement and return structured transactions."""
+    response, _ = await _parse_single_file(file)
+    return response
+
+
+@router.post("/upload/multi", response_model=MultiUploadResponse)
+async def upload_multiple_files(files: list[UploadFile]) -> MultiUploadResponse:
+    """Parse multiple bank statements and merge all transactions."""
+    if not files:
+        raise HTTPException(status_code=400, detail="No files uploaded.")
+
+    all_transactions = []
+    file_infos = []
+    offset = 0
+
+    for upload in files:
+        response, offset = await _parse_single_file(upload, id_offset=offset)
+        all_transactions.extend(response.transactions)
+        file_infos.append(
+            UploadedFileInfo(
+                filename=upload.filename or "unknown",
+                file_type=response.file_type,
+                bank_format=response.bank_format,
+                statement_type=response.statement_type,
+                row_count=response.row_count,
+            )
+        )
+
+    return MultiUploadResponse(
+        transactions=all_transactions,
+        files=file_infos,
+        total_row_count=len(all_transactions),
     )

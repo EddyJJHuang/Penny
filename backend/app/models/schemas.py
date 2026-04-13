@@ -106,6 +106,27 @@ class UploadResponse(BaseModel):
     row_count: int = Field(..., examples=[142])
 
 
+# --- POST /api/upload/multi ---
+
+
+class UploadedFileInfo(BaseModel):
+    """Metadata about a single file in a multi-upload batch."""
+
+    filename: str = Field(..., examples=["chase_march.csv"])
+    file_type: Literal["csv", "pdf"]
+    bank_format: str = Field(..., examples=["chase"])
+    statement_type: Literal["credit", "debit"]
+    row_count: int = Field(..., examples=[42])
+
+
+class MultiUploadResponse(BaseModel):
+    """Response from uploading multiple bank statements."""
+
+    transactions: list[Transaction]
+    files: list[UploadedFileInfo]
+    total_row_count: int = Field(..., examples=[284])
+
+
 # --- POST /api/classify ---
 
 

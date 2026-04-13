@@ -85,6 +85,24 @@ export interface UploadResponse {
 }
 
 // ---------------------------------------------------------------------------
+// POST /api/upload/multi
+// ---------------------------------------------------------------------------
+
+export interface UploadedFileInfo {
+  filename: string;
+  file_type: "csv" | "pdf";
+  bank_format: string;
+  statement_type: "credit" | "debit";
+  row_count: number;
+}
+
+export interface MultiUploadResponse {
+  transactions: Transaction[];
+  files: UploadedFileInfo[];
+  total_row_count: number;
+}
+
+// ---------------------------------------------------------------------------
 // POST /api/classify
 // ---------------------------------------------------------------------------
 
