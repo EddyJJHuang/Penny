@@ -4,6 +4,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { FileUpload } from "./components/FileUpload";
 import { Stepper } from "./components/Stepper";
 import { TransactionTable } from "./components/TransactionTable";
+import { LandingPage } from "./components/LandingPage";
 import type {
   ClassificationStats,
   ClassifiedTransaction,
@@ -18,6 +19,10 @@ const STEPS: Step[] = [
 ];
 
 function App() {
+  // State for toggling between the Landing Page and the main application
+  const [showLanding, setShowLanding] = useState(true);
+  
+  // State to track the current step in the application flow (0: Upload, 1: Review, 2: Dashboard)
   const [currentStep, setCurrentStep] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [classifications, setClassifications] = useState<
@@ -28,27 +33,38 @@ function App() {
   // Step transition animation
   const contentRef = useRef<HTMLDivElement>(null);
 
+  // Handles the transition animation between steps
+  // Triggered whenever the current step or the landing page visibility changes
   useEffect(() => {
     const el = contentRef.current;
     if (!el) return;
+    
+    // Reset animation classes
     el.classList.remove("step-visible");
     el.classList.add("step-enter");
 
-    // Force reflow then animate in
+    // Force reflow to restart the animation, then apply the visible class
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         el.classList.remove("step-enter");
         el.classList.add("step-visible");
       });
     });
-  }, [currentStep]);
+  }, [currentStep, showLanding]);
 
+  // Reset the application state and return to the landing page
   const handleStartOver = () => {
+    setShowLanding(true);
     setCurrentStep(0);
     setTransactions([]);
     setClassifications([]);
     setStats(null);
   };
+
+  // Conditionally render the Landing Page if showLanding is true
+  if (showLanding) {
+    return <LandingPage onGetStarted={() => setShowLanding(false)} />;
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
@@ -57,8 +73,10 @@ function App() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-2.5">
             {/* Logo */}
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 shadow-sm">
-              <span className="text-base font-bold text-white">P</span>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 border-[2px] border-yellow-600 flex items-center justify-center shadow-[inset_0_-2px_4px_rgba(0,0,0,0.2),_0_2px_4px_rgba(0,0,0,0.1)] relative">
+              <div className="w-5 h-5 rounded-full border border-yellow-600/40 flex items-center justify-center">
+                 <span className="text-yellow-800 font-bold text-xs">¢</span>
+              </div>
             </div>
             <div>
               <h1 className="text-lg font-bold leading-none text-gray-900">
