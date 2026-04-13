@@ -7,6 +7,7 @@ import type {
   Transaction,
 } from "../types";
 import { ALL_CATEGORIES } from "../types";
+import { FadeIn } from "./ui/animated";
 
 interface TransactionTableProps {
   transactions: Transaction[];
@@ -188,6 +189,8 @@ export function TransactionTable({
 
   return (
     <div className="mx-auto max-w-5xl">
+      {/* Animation: FadeIn — header entrance */}
+      <FadeIn direction="down" duration={0.4}>
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
@@ -231,6 +234,7 @@ export function TransactionTable({
           )}
         </div>
       </div>
+      </FadeIn>
 
       {/* Attention banner */}
       {hasResults && totalFlagged > 0 && (
@@ -397,10 +401,8 @@ export function TransactionTable({
         </div>
       )}
 
-      {/* 
-        Main Data Table 
-        Designed with a translucent backdrop and large rounded corners to be consistent with the modern dashboard aesthetics 
-      */}
+      {/* Animation: FadeIn — table container entrance */}
+      <FadeIn delay={0.15} duration={0.5}>
       <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white/60 backdrop-blur-2xl shadow-2xl">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-100">
@@ -512,6 +514,7 @@ export function TransactionTable({
           </table>
         </div>
       </div>
+      </FadeIn>
     </div>
   );
 }

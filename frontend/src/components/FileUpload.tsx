@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { uploadFile, uploadMultipleFiles } from "../services/api";
 import type { Transaction, UploadedFileInfo } from "../types";
+import { FadeIn } from "./ui/animated";
 
 const ACCEPTED_TYPES = new Set([
   "text/csv",
@@ -117,8 +118,8 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
   };
 
   return (
-    // Main container wrapping the upload mechanism
-    // Features a glassmorphic aesthetic to match the overall dark/emerald landing page theme
+    // Animation: FadeIn — upload container entrance
+    <FadeIn duration={0.5} direction="up" distance={30}>
     <div className="mx-auto max-w-2xl bg-white/60 backdrop-blur-3xl rounded-[2.5rem] p-8 sm:p-12 shadow-2xl border border-white mt-8">
       <div className="text-center mb-8">
         <h2 className="mb-3 text-3xl font-black text-gray-900 tracking-tight">
@@ -318,5 +319,6 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
         </button>
       )}
     </div>
+    </FadeIn>
   );
 }

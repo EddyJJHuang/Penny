@@ -1,4 +1,5 @@
 import { ArrowRight, BarChart3, BrainCircuit, ShieldCheck, Zap } from "lucide-react";
+import { BlurText, FadeIn, GradientText } from "./ui/animated";
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -34,40 +35,61 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="absolute bottom-[20%] right-[10%] w-[400px] h-[400px] bg-sky-200/50 blur-[120px] rounded-full pointer-events-none mix-blend-multiply" />
 
         <div className="relative z-10 max-w-4xl mx-auto text-center mb-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-emerald-100 text-emerald-700 text-sm font-semibold mb-8 shadow-sm">
-            <Zap className="w-4 h-4 fill-emerald-500" />
-            <span>Powered by Google Gemini API</span>
-          </div>
-          
+          {/* Animation: FadeIn — badge entrance */}
+          <FadeIn direction="down" duration={0.4} delay={0.1}>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-emerald-100 text-emerald-700 text-sm font-semibold mb-8 shadow-sm">
+              <Zap className="w-4 h-4 fill-emerald-500" />
+              <span>Powered by Google Gemini API</span>
+            </div>
+          </FadeIn>
+
+          {/* Animation: BlurText — hero headline reveal */}
           <h1 className="text-6xl md:text-8xl font-black text-gray-900 tracking-tighter mb-8 leading-[1.05]">
-            Personal Finance,<br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600">
+            <BlurText
+              text="Personal Finance,"
+              className="justify-center text-6xl md:text-8xl font-black text-gray-900 tracking-tighter leading-[1.05]"
+              delay={80}
+              animateBy="words"
+              direction="top"
+            />
+            <GradientText
+              colors={['#10b981', '#14b8a6', '#0891b2', '#10b981']}
+              animationSpeed={6}
+              className="text-6xl md:text-8xl font-black tracking-tighter leading-[1.05]"
+            >
               Supercharged by AI.
-            </span>
+            </GradientText>
           </h1>
-          
-          <p className="text-xl md:text-2xl text-gray-500 max-w-3xl mx-auto mb-10 leading-relaxed font-medium">
-            Upload your bank statements and let AI categorize your spending, discover insights, and provide actionable savings recommendations.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button 
-              onClick={onGetStarted}
-              className="group px-8 py-4 bg-gray-900 text-white font-bold text-lg rounded-full hover:bg-gray-800 transition-all duration-300 flex items-center justify-center gap-2 shadow-xl shadow-gray-900/20 active:scale-95"
-            >
-              Start Analyzing Now
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-            <a 
-              href="#how-it-works"
-              className="px-8 py-4 bg-white text-gray-700 font-bold text-lg rounded-full hover:bg-gray-50 border border-gray-200 transition-all duration-300 flex items-center justify-center active:scale-95 shadow-sm hover:shadow"
-            >
-              See How It Works
-            </a>
-          </div>
+
+          {/* Animation: FadeIn — subtitle */}
+          <FadeIn delay={0.5} duration={0.6}>
+            <p className="text-xl md:text-2xl text-gray-500 max-w-3xl mx-auto mb-10 leading-relaxed font-medium">
+              Upload your bank statements and let AI categorize your spending, discover insights, and provide actionable savings recommendations.
+            </p>
+          </FadeIn>
+
+          {/* Animation: FadeIn — CTA buttons */}
+          <FadeIn delay={0.7} duration={0.5}>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={onGetStarted}
+                className="group px-8 py-4 bg-gray-900 text-white font-bold text-lg rounded-full hover:bg-gray-800 transition-all duration-300 flex items-center justify-center gap-2 shadow-xl shadow-gray-900/20 active:scale-95"
+              >
+                Start Analyzing Now
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+              <a
+                href="#how-it-works"
+                className="px-8 py-4 bg-white text-gray-700 font-bold text-lg rounded-full hover:bg-gray-50 border border-gray-200 transition-all duration-300 flex items-center justify-center active:scale-95 shadow-sm hover:shadow"
+              >
+                See How It Works
+              </a>
+            </div>
+          </FadeIn>
         </div>
 
-        {/* Hero Abstract Dashboard Mockup */}
+        {/* Animation: FadeIn — hero dashboard mockup */}
+        <FadeIn delay={0.9} duration={0.7} direction="up" distance={40}>
         <div className="relative w-full max-w-4xl mx-auto perspective-1000 z-10">
           <div className="absolute inset-0 bg-gradient-to-tr from-emerald-400/20 to-sky-400/20 rounded-[2.5rem] blur-2xl transform translate-y-4"></div>
           <div className="relative bg-white/80 backdrop-blur-2xl rounded-3xl p-6 md:p-10 shadow-2xl border border-white flex flex-col gap-8">
@@ -104,19 +126,23 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             </div>
           </div>
         </div>
+        </FadeIn>
       </section>
 
       {/* Features Showcase */}
       <section id="how-it-works" className="py-32 bg-white relative">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-24">
+          {/* Animation: FadeIn — section header */}
+          <FadeIn className="text-center mb-24">
             <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight mb-6">Smarter Tracking, Zero Effort</h2>
             <p className="text-xl text-gray-500 text-balance max-w-2xl mx-auto">A completely automated workflow that respects your privacy. No bank logins required.</p>
-          </div>
+          </FadeIn>
 
           <div className="space-y-32">
             
             {/* Feature 1: Intelligent Categorization (CSS Mockup) */}
+            {/* Animation: FadeIn — feature block entrance */}
+            <FadeIn direction="left" distance={40} duration={0.6}>
             <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
               <div className="flex-1 space-y-8">
                 <div className="w-14 h-14 bg-blue-50 border border-blue-100 text-blue-600 rounded-2xl flex items-center justify-center">
@@ -167,8 +193,11 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                  </div>
               </div>
             </div>
+            </FadeIn>
 
             {/* Feature 2: Actionable Insights (CSS Mockup) */}
+            {/* Animation: FadeIn — feature block entrance */}
+            <FadeIn direction="right" distance={40} duration={0.6}>
             <div className="flex flex-col lg:flex-row-reverse items-center gap-16 lg:gap-24">
               <div className="flex-1 space-y-8">
                 <div className="w-14 h-14 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center">
@@ -226,6 +255,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                  </div>
               </div>
             </div>
+            </FadeIn>
 
           </div>
         </div>
@@ -237,20 +267,21 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="absolute top-0 left-1/4 w-[1000px] h-[1000px] bg-emerald-500/20 blur-[150px] rounded-full pointer-events-none mix-blend-screen opacity-40"></div>
         <div className="absolute bottom-0 right-1/4 w-[800px] h-[800px] bg-teal-500/20 blur-[150px] rounded-full pointer-events-none mix-blend-screen opacity-40"></div>
 
-        <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
+        {/* Animation: FadeIn — CTA section entrance */}
+        <FadeIn className="max-w-4xl mx-auto px-6 relative z-10 text-center">
           <h2 className="text-4xl md:text-6xl font-black text-white mb-8 tracking-tight">
             Ready to Take Control?
           </h2>
           <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
             No sign up required. Your data is processed securely in your browser session and never permanently stored. Instant, secure, and smart.
           </p>
-          <button 
+          <button
             onClick={onGetStarted}
             className="px-12 py-5 bg-white text-gray-900 font-bold text-xl rounded-full hover:bg-gray-100 hover:scale-105 transition-all duration-300 shadow-2xl shadow-white/10 active:scale-95"
           >
             Upload Your Statement
           </button>
-        </div>
+        </FadeIn>
       </section>
 
       {/* Footer */}

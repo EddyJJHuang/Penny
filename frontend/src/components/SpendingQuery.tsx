@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { querySpending } from "../services/api";
 import type { ClassifiedTransaction, Transaction } from "../types";
 
@@ -129,22 +130,28 @@ export function SpendingQuery({
             </div>
           </div>
         ) : (
-          messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-[80%] rounded-xl px-4 py-2.5 text-sm leading-relaxed ${
-                  msg.role === "user"
-                    ? "bg-emerald-600 text-white"
-                    : "bg-gray-100 text-gray-800"
-                }`}
+          // Animation: motion — chat message slide-in
+          <AnimatePresence initial={false}>
+            {messages.map((msg, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 12, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
-                {msg.content}
-              </div>
-            </div>
-          ))
+                <div
+                  className={`max-w-[80%] rounded-xl px-4 py-2.5 text-sm leading-relaxed ${
+                    msg.role === "user"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  {msg.content}
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         )}
 
         {isLoading && (

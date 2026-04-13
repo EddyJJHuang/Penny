@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getRecommendations } from "../services/api";
 import type { Recommendation } from "../types";
+import { SpotlightCard, StaggerContainer } from "./ui/animated";
 
 interface RecommendationsProps {
   spendingByCategory: Record<string, number>;
@@ -89,13 +90,19 @@ export function Recommendations({
         </div>
       )}
 
-      {/* Recommendation cards */}
+      {/* Animation: StaggerContainer + SpotlightCard — recommendation cards */}
       {!isLoading && recommendations.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <StaggerContainer
+          className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+          staggerDelay={0.12}
+          direction="up"
+          distance={20}
+        >
           {recommendations.map((rec, index) => (
-            <div
+            <SpotlightCard
               key={index}
               className="flex flex-col justify-between rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+              spotlightColor="rgba(16, 185, 129, 0.12)"
             >
               <div>
                 <h4 className="mb-2 text-sm font-semibold text-gray-900">
@@ -113,9 +120,9 @@ export function Recommendations({
                   Save ${rec.potential_savings.toFixed(0)}/mo
                 </span>
               </div>
-            </div>
+            </SpotlightCard>
           ))}
-        </div>
+        </StaggerContainer>
       )}
     </div>
   );

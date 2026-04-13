@@ -7,6 +7,7 @@ import { SpendingPieChart } from "./PieChart";
 import { Recommendations } from "./Recommendations";
 import { SpendingQuery } from "./SpendingQuery";
 import { SummaryCards } from "./SummaryCards";
+import { FadeIn } from "./ui/animated";
 
 interface DashboardProps {
   transactions: Transaction[];
@@ -50,15 +51,18 @@ export function Dashboard({ transactions, classifications }: DashboardProps) {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-xl font-semibold text-gray-900">
-          Spending Dashboard
-        </h2>
-        <ExportButtons
-          transactions={transactions}
-          classifications={classifications}
-        />
-      </div>
+      {/* Animation: FadeIn — dashboard header */}
+      <FadeIn direction="down" duration={0.4}>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <h2 className="text-xl font-semibold text-gray-900">
+            Spending Dashboard
+          </h2>
+          <ExportButtons
+            transactions={transactions}
+            classifications={classifications}
+          />
+        </div>
+      </FadeIn>
 
       {/* Summary cards — full width */}
       <div className="mb-6">
@@ -68,36 +72,42 @@ export function Dashboard({ transactions, classifications }: DashboardProps) {
         />
       </div>
 
-      {/* Charts — 2-column responsive grid */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <SpendingPieChart categoryTotals={categoryTotals} />
-        <SpendingBarChart
-          transactions={transactions}
-          classifications={classifications}
-        />
-        <div className="lg:col-span-2">
-          <SpendingLineChart transactions={transactions} />
+      {/* Animation: FadeIn — charts section */}
+      <FadeIn delay={0.2} duration={0.5}>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <SpendingPieChart categoryTotals={categoryTotals} />
+          <SpendingBarChart
+            transactions={transactions}
+            classifications={classifications}
+          />
+          <div className="lg:col-span-2">
+            <SpendingLineChart transactions={transactions} />
+          </div>
         </div>
-      </div>
+      </FadeIn>
 
-      {/* AI Recommendations */}
-      <div className="mt-6">
-        <Recommendations
-          spendingByCategory={categoryTotals}
-          monthlyTotals={monthlyTotals}
-        />
-      </div>
+      {/* Animation: FadeIn — AI Recommendations */}
+      <FadeIn delay={0.3} duration={0.5}>
+        <div className="mt-6">
+          <Recommendations
+            spendingByCategory={categoryTotals}
+            monthlyTotals={monthlyTotals}
+          />
+        </div>
+      </FadeIn>
 
-      {/* Natural Language Query */}
-      <div className="mt-6">
-        <h3 className="mb-3 text-lg font-semibold text-gray-900">
-          Ask Penny
-        </h3>
-        <SpendingQuery
-          transactions={transactions}
-          classifications={classifications}
-        />
-      </div>
+      {/* Animation: FadeIn — Natural Language Query */}
+      <FadeIn delay={0.4} duration={0.5}>
+        <div className="mt-6">
+          <h3 className="mb-3 text-lg font-semibold text-gray-900">
+            Ask Penny
+          </h3>
+          <SpendingQuery
+            transactions={transactions}
+            classifications={classifications}
+          />
+        </div>
+      </FadeIn>
     </div>
   );
 }
