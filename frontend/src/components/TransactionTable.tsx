@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { classifyTransactions, correctTransaction } from "../services/api";
 import type {
   Category,
@@ -30,6 +30,28 @@ const METHOD_LABELS: Record<string, string> = {
   user_correction: "User",
 };
 
+type AttentionLevel = "critical" | "warning" | "none";
+
+function getAttentionLevel(classified: ClassifiedTransaction | undefined): AttentionLevel {
+  if (!classified) return "critical";
+  if (classified.category === "Uncategorized") return "critical";
+  if (classified.confidence === "low") return "critical";
+  if (classified.confidence === "medium") return "warning";
+  return "none";
+}
+
+const ROW_STYLES: Record<AttentionLevel, string> = {
+  critical: "bg-red-50/60 border-l-4 border-l-red-400",
+  warning: "bg-amber-50/50 border-l-4 border-l-amber-300",
+  none: "border-l-4 border-l-transparent",
+};
+
+const ROW_HOVER: Record<AttentionLevel, string> = {
+  critical: "hover:bg-red-50",
+  warning: "hover:bg-amber-50",
+  none: "hover:bg-gray-50",
+};
+
 export function TransactionTable({
   transactions,
   classifications,
@@ -39,6 +61,8 @@ export function TransactionTable({
   const [isClassifying, setIsClassifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [correctionCount, setCorrectionCount] = useState(0);
+  const [showOnlyFlagged, setShowOnlyFlagged] = useState(false);
+  const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
 
   const hasResults = classifications.length > 0;
 
@@ -89,6 +113,48 @@ export function TransactionTable({
     [transactions]
   );
 
+  // Compute attention stats
+  const attentionStats = useMemo(() => {
+    if (!hasResults) return { critical: 0, warning: 0, flaggedIds: [] as string[] };
+
+    let critical = 0;
+    let warning = 0;
+    const flaggedIds: string[] = [];
+
+    for (const txn of sortedTransactions) {
+      const level = getAttentionLevel(classificationMap.get(txn.id));
+      if (level === "critical") {
+        critical++;
+        flaggedIds.push(txn.id);
+      } else if (level === "warning") {
+        warning++;
+        flaggedIds.push(txn.id);
+      }
+    }
+
+    return { critical, warning, flaggedIds };
+  }, [hasResults, sortedTransactions, classificationMap]);
+
+  // Filtered list when "show only flagged" is active
+  const displayedTransactions = useMemo(() => {
+    if (!showOnlyFlagged) return sortedTransactions;
+    const flaggedSet = new Set(attentionStats.flaggedIds);
+    return sortedTransactions.filter((txn) => flaggedSet.has(txn.id));
+  }, [sortedTransactions, showOnlyFlagged, attentionStats.flaggedIds]);
+
+  // Jump to next flagged transaction
+  const scrollToNextFlagged = useCallback(() => {
+    for (const id of attentionStats.flaggedIds) {
+      const el = rowRefs.current.get(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("ring-2", "ring-amber-400");
+        setTimeout(() => el.classList.remove("ring-2", "ring-amber-400"), 1500);
+        break;
+      }
+    }
+  }, [attentionStats.flaggedIds]);
+
   const handleCategoryChange = async (
     transactionId: string,
     newCategory: Category
@@ -117,6 +183,8 @@ export function TransactionTable({
       setError("Failed to save correction. Please try again.");
     }
   };
+
+  const totalFlagged = attentionStats.critical + attentionStats.warning;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -163,6 +231,85 @@ export function TransactionTable({
           )}
         </div>
       </div>
+
+      {/* Attention banner */}
+      {hasResults && totalFlagged > 0 && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <svg
+              className="h-5 w-5 flex-shrink-0 text-amber-500"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+              />
+            </svg>
+            <span className="text-sm text-amber-800">
+              <span className="font-semibold">{totalFlagged}</span> transaction
+              {totalFlagged !== 1 ? "s" : ""} need
+              {totalFlagged === 1 ? "s" : ""} your attention
+              {attentionStats.critical > 0 && (
+                <span className="ml-1">
+                  — <span className="font-semibold text-red-600">{attentionStats.critical}</span> uncategorized/low confidence
+                </span>
+              )}
+              {attentionStats.warning > 0 && (
+                <span className="ml-1">
+                  {attentionStats.critical > 0 ? ", " : "— "}
+                  <span className="font-semibold text-amber-600">{attentionStats.warning}</span> medium confidence
+                </span>
+              )}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowOnlyFlagged((prev) => !prev)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                showOnlyFlagged
+                  ? "bg-amber-600 text-white hover:bg-amber-700"
+                  : "bg-white text-amber-700 border border-amber-300 hover:bg-amber-100"
+              }`}
+            >
+              {showOnlyFlagged ? "Show All" : "Show Only Flagged"}
+            </button>
+            <button
+              type="button"
+              onClick={scrollToNextFlagged}
+              className="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-100"
+            >
+              Jump to Next
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* All clear banner */}
+      {hasResults && totalFlagged === 0 && (
+        <div className="mb-4 flex items-center gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <svg
+            className="h-5 w-5 flex-shrink-0 text-emerald-500"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span className="text-sm font-medium text-emerald-700">
+            All transactions classified with high confidence.
+          </span>
+        </div>
+      )}
 
       {/* Error banner */}
       {error && (
@@ -236,6 +383,20 @@ export function TransactionTable({
         </div>
       )}
 
+      {/* Legend */}
+      {hasResults && totalFlagged > 0 && (
+        <div className="mb-3 flex gap-4 text-xs text-gray-400">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-red-300" />
+            Needs review (uncategorized / low confidence)
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-amber-300" />
+            Check recommended (medium confidence)
+          </span>
+        </div>
+      )}
+
       {/* Table */}
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
@@ -267,12 +428,20 @@ export function TransactionTable({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {sortedTransactions.map((txn) => {
+              {displayedTransactions.map((txn) => {
                 const classified = classificationMap.get(txn.id);
+                const attention = hasResults ? getAttentionLevel(classified) : "none";
                 return (
                   <tr
                     key={txn.id}
-                    className="hover:bg-gray-50 transition-colors"
+                    ref={(el) => {
+                      if (el && attention !== "none") {
+                        rowRefs.current.set(txn.id, el);
+                      } else {
+                        rowRefs.current.delete(txn.id);
+                      }
+                    }}
+                    className={`${ROW_STYLES[attention]} ${ROW_HOVER[attention]} transition-all duration-200`}
                   >
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
                       {txn.date}
@@ -299,7 +468,13 @@ export function TransactionTable({
                                 e.target.value as Category
                               )
                             }
-                            className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                            className={`rounded border px-2 py-1 text-xs focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 ${
+                              attention === "critical"
+                                ? "border-red-300 bg-red-50 text-red-800"
+                                : attention === "warning"
+                                  ? "border-amber-300 bg-amber-50 text-amber-800"
+                                  : "border-gray-200 bg-white text-gray-700"
+                            }`}
                           >
                             {ALL_CATEGORIES.map((cat) => (
                               <option key={cat} value={cat}>
