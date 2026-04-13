@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { ClassifiedTransaction, Transaction } from "../types";
 import { SpendingBarChart } from "./BarChart";
+import { ExportButtons } from "./ExportButtons";
 import { SpendingLineChart } from "./LineChart";
 import { SpendingPieChart } from "./PieChart";
 import { Recommendations } from "./Recommendations";
@@ -48,9 +49,15 @@ export function Dashboard({ transactions, classifications }: DashboardProps) {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <h2 className="mb-6 text-xl font-semibold text-gray-900">
-        Spending Dashboard
-      </h2>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <h2 className="text-xl font-semibold text-gray-900">
+          Spending Dashboard
+        </h2>
+        <ExportButtons
+          transactions={transactions}
+          classifications={classifications}
+        />
+      </div>
 
       {/* Summary cards — full width */}
       <div className="mb-6">

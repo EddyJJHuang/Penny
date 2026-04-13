@@ -159,3 +159,13 @@ class RecommendResponse(BaseModel):
     """AI-generated savings recommendations."""
 
     recommendations: list[Recommendation]
+
+
+# --- POST /api/export/csv and /api/export/pdf ---
+
+
+class ExportRequest(BaseModel):
+    """Data required to export classified transactions as CSV or PDF."""
+
+    transactions: list[Transaction]
+    classifications: list[ClassifiedTransaction]

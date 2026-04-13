@@ -4,6 +4,7 @@ import type {
   ClassifyResponse,
   CorrectionRequest,
   CorrectionResponse,
+  ExportRequest,
   RecommendRequest,
   RecommendResponse,
   UploadResponse,
@@ -54,4 +55,20 @@ export async function getRecommendations(
     request
   );
   return data;
+}
+
+/** POST /api/export/csv — download classified transactions as CSV. */
+export async function exportCsv(request: ExportRequest): Promise<Blob> {
+  const { data } = await api.post("/api/export/csv", request, {
+    responseType: "blob",
+  });
+  return data as Blob;
+}
+
+/** POST /api/export/pdf — download a PDF summary report. */
+export async function exportPdf(request: ExportRequest): Promise<Blob> {
+  const { data } = await api.post("/api/export/pdf", request, {
+    responseType: "blob",
+  });
+  return data as Blob;
 }

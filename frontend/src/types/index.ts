@@ -125,6 +125,15 @@ export interface RecommendResponse {
 }
 
 // ---------------------------------------------------------------------------
+// POST /api/export/csv and /api/export/pdf
+// ---------------------------------------------------------------------------
+
+export interface ExportRequest {
+  transactions: Transaction[];
+  classifications: ClassifiedTransaction[];
+}
+
+// ---------------------------------------------------------------------------
 // UI types
 // ---------------------------------------------------------------------------
 
