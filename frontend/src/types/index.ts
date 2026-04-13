@@ -143,6 +143,20 @@ export interface RecommendResponse {
 }
 
 // ---------------------------------------------------------------------------
+// POST /api/query
+// ---------------------------------------------------------------------------
+
+export interface NLQueryRequest {
+  question: string;
+  transactions: Transaction[];
+  classifications: ClassifiedTransaction[];
+}
+
+export interface NLQueryResponse {
+  answer: string;
+}
+
+// ---------------------------------------------------------------------------
 // POST /api/export/csv and /api/export/pdf
 // ---------------------------------------------------------------------------
 

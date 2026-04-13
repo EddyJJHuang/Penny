@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import classify, export, recommend, upload
+from app.routers import classify, export, query, recommend, upload
 
 app = FastAPI(
     title="Penny API",
@@ -23,6 +23,7 @@ app.include_router(upload.router, prefix="/api")
 app.include_router(classify.router, prefix="/api")
 app.include_router(recommend.router, prefix="/api")
 app.include_router(export.router, prefix="/api")
+app.include_router(query.router, prefix="/api")
 
 
 @app.get("/")

@@ -6,6 +6,8 @@ import type {
   CorrectionResponse,
   ExportRequest,
   MultiUploadResponse,
+  NLQueryRequest,
+  NLQueryResponse,
   RecommendRequest,
   RecommendResponse,
   UploadResponse,
@@ -71,6 +73,14 @@ export async function getRecommendations(
     "/api/recommend",
     request
   );
+  return data;
+}
+
+/** POST /api/query — ask a natural language question about spending data. */
+export async function querySpending(
+  request: NLQueryRequest
+): Promise<NLQueryResponse> {
+  const { data } = await api.post<NLQueryResponse>("/api/query", request);
   return data;
 }
 

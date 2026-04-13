@@ -5,6 +5,7 @@ import { ExportButtons } from "./ExportButtons";
 import { SpendingLineChart } from "./LineChart";
 import { SpendingPieChart } from "./PieChart";
 import { Recommendations } from "./Recommendations";
+import { SpendingQuery } from "./SpendingQuery";
 import { SummaryCards } from "./SummaryCards";
 
 interface DashboardProps {
@@ -84,6 +85,17 @@ export function Dashboard({ transactions, classifications }: DashboardProps) {
         <Recommendations
           spendingByCategory={categoryTotals}
           monthlyTotals={monthlyTotals}
+        />
+      </div>
+
+      {/* Natural Language Query */}
+      <div className="mt-6">
+        <h3 className="mb-3 text-lg font-semibold text-gray-900">
+          Ask Penny
+        </h3>
+        <SpendingQuery
+          transactions={transactions}
+          classifications={classifications}
         />
       </div>
     </div>

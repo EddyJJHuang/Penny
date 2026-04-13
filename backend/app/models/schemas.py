@@ -190,3 +190,23 @@ class ExportRequest(BaseModel):
 
     transactions: list[Transaction]
     classifications: list[ClassifiedTransaction]
+
+
+# --- POST /api/query ---
+
+
+class NLQueryRequest(BaseModel):
+    """Natural language question about spending data."""
+
+    question: str = Field(..., examples=["How much did I spend on dining out?"])
+    transactions: list[Transaction]
+    classifications: list[ClassifiedTransaction]
+
+
+class NLQueryResponse(BaseModel):
+    """Answer to a natural language spending question."""
+
+    answer: str = Field(
+        ...,
+        examples=["You spent $485.00 on Dining Out, which is 35% of your total spending."],
+    )
